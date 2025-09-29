@@ -1,2 +1,2 @@
-# cs6440-project
-CS6440 Project - Sleep tracking with FHIR integration
+# CS6440 Project
+Sleep + FHIR dashboard scaffold.
