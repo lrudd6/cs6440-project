@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Sleep Dashboard</title>
+  <!-- chart.js library to draw the chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <h2>Sleep Tracker Dashboard</h2>
+  <p>This chart shows sleep hours for the last few days using the Flask /sleep endpoint.</p>
+
+  <!-- Location the chart will go -->
+  <canvas id="sleepChart" width="400" height="200"></canvas>
+
+  <script>
+    // Helper function to format date YYYY-MM-DD
+    function fmt(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    // Make list of the last 5 days (oldest first)
+    function lastNDates(n) {
+      const dates = [];
+      const today = new Date();
+      for (let i = n - 1; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        dates.push(fmt(d));
+      }
+      return dates;
+    }
+
+    // Ask Flask for one night of sleep data: /sleep?date=YYYY-MM-DD
+    async function fetchSleepForDate(dateStr) {
+      const url = `/sleep?date=${encodeURIComponent(dateStr)}`;
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error("Request failed");
+      const data = await resp.json();
+      return { date: data.date, hours: data.total_sleep_hours };
+    }
+
+    async function main() {
+      const dates = lastNDates(5);
+
+      // Ask Flask for each date data
+      const results = await Promise.all(
+        dates.map(d => fetchSleepForDate(d).catch(err => {
+          console.log("Failed to get data for", d);
+          return { date: d, hours: 0 };
+        }))
+      );
+
+      const labels = results.map(r => r.date);
+      const values = results.map(r => r.hours);
+
+      // Draw chart
+      const ctx = document.getElementById("sleepChart").getContext("2d");
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Sleep Hours (from API)",
+            data: values,
+            backgroundColor: "rgba(54, 162, 235, 0.5)",
+            borderColor: "rgba(54, 162, 235, 1)",
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: "Hours of Sleep" }
+            },
+            x: {
+              title: { display: true, text: "Date" }
+            }
+          }
+        }
+      });
+    }
+
+    // Run when page loads
+    main();
+  </script>
+</body>
+</html>

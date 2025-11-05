@@ -1,7 +1,9 @@
 # Flask app that returns fake sleep data as JSON
 # Uses sleep_gen.py
 
-from flask import Flask, jsonify, request
+import os
+
+from flask import Flask, jsonify, request, render_template
 from app.sleep_gen import generate_sleep_night
 
 # Import functions from fhir_untils.py
@@ -65,6 +67,9 @@ def get_fhir_observation():
     # Send back in JSON format
     return jsonify(bundle)
 
-# Run app locally on port 5000
+# Run app locally or on Render (this portion has been modified since last version)
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Render gives PORT number automatically. Use 5000 locally
+    port = int(os.environ.get("PORT", 5000))
+    # host="0.0.0.0" to listens on all network connections
+    app.run(host="0.0.0.0", port=port, debug=True)
