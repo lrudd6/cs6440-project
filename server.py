@@ -67,6 +67,12 @@ def get_fhir_observation():
     # Send back in JSON format
     return jsonify(bundle)
 
+# Simple HTML dashboard page
+@app.route("/dashboard")
+def dashboard():
+    # Renders templates/dashboard.html
+    return render_template("dashboard.html")
+
 # Run app locally or on Render (this portion has been modified since last version)
 if __name__ == "__main__":
     # Render gives PORT number automatically. Use 5000 locally
