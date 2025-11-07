@@ -15,7 +15,18 @@ app = Flask(__name__)
 # Home page to check if running
 @app.route("/")
 def home():
-    return "Sleep Tracker API is running. Try going to /sleep"
+    return """
+    <h1>Sleep Tracker API</h1>
+    <p>Sleep Tracker demo application.</p>
+    <p>The following routes show the system:</p>
+    <ul>
+        <li><a href="/sleep">/sleep</a> – View a sample JSON of generated sleep data</li>
+        <li><a href="/dashboard">/dashboard</a> – View a chart visualization of sleep data</li>
+        <li><a href="/fhir/observation">/fhir/observation</a> – View FHIR Bundle JSON for the sample patient</li>
+        <li><a href="Refresh page to see different data</li>
+    </ul>
+    <p>This app demonstrates how synthetic sleep data can be represented and shared in FHIR format.</p>
+    """
 
 # Main route that gives back sleep data
 @app.route("/sleep")
