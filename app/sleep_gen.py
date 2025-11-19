@@ -63,3 +63,34 @@ def generate_sleep_night(date=None, bedtime="23:00", waketime="07:00", interval=
     }
 
     return result
+
+# Make fake sleep data for multiple nights in a row
+# Call generate_sleep_night each night
+def generate_sleep_series(num_nights=5, start_date=None, bedtime="23:00", waketime="07:00", interval=1):
+    # Start date
+    # If no start_date use current date
+    if start_date is None:
+        base_date = datetime.now().date()
+    else:
+        # start_date in YYYY-MM-DD format
+        base_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+
+    nights = []
+
+    # Loop through number of nights and make dates
+    for i in range(num_nights):
+        night_date = base_date + timedelta(days=i)
+        night_date_str = night_date.strftime("%Y-%m-%d")
+
+        # Call generate_sleep_night
+        night_info = generate_sleep_night(
+            date=night_date_str,
+            bedtime=bedtime,
+            waketime=waketime,
+            interval=interval,
+            chance_asleep=None, 
+        )
+
+        nights.append(night_info)
+
+    return nights

@@ -1,4 +1,4 @@
-# Test sleep_gen.py program.
+# Test sleep_gen.py program
 # Run one example night of sleep data and prints the results.
 
 from app.sleep_gen import generate_sleep_night

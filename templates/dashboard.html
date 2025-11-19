@@ -1,93 +1,231 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Sleep Dashboard</title>
-  <!-- chart.js library to draw the chart -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-
-<body>
-  <h2>Sleep Tracker Dashboard</h2>
-  <p>This chart shows sleep hours for the last few days using the Flask /sleep endpoint.</p>
-
-  <!-- Location the chart will go -->
-  <canvas id="sleepChart" width="400" height="200"></canvas>
-
-  <script>
-    // Helper function to format date YYYY-MM-DD
-    function fmt(d) {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
-    }
-
-    // Make list of the last 5 days (oldest first)
-    function lastNDates(n) {
-      const dates = [];
-      const today = new Date();
-      for (let i = n - 1; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        dates.push(fmt(d));
-      }
-      return dates;
-    }
-
-    // Ask Flask for one night of sleep data: /sleep?date=YYYY-MM-DD
-    async function fetchSleepForDate(dateStr) {
-      const url = `/sleep?date=${encodeURIComponent(dateStr)}`;
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error("Request failed");
-      const data = await resp.json();
-      return { date: data.date, hours: data.total_sleep_hours };
-    }
-
-    async function main() {
-      const dates = lastNDates(5);
-
-      // Ask Flask for each date data
-      const results = await Promise.all(
-        dates.map(d => fetchSleepForDate(d).catch(err => {
-          console.log("Failed to get data for", d);
-          return { date: d, hours: 0 };
-        }))
-      );
-
-      const labels = results.map(r => r.date);
-      const values = results.map(r => r.hours);
-
-      // Draw chart
-      const ctx = document.getElementById("sleepChart").getContext("2d");
-      new Chart(ctx, {
-        type: "bar",
-        data: {
-          labels: labels,
-          datasets: [{
-            label: "Sleep Hours (from API)",
-            data: values,
-            backgroundColor: "rgba(54, 162, 235, 0.5)",
-            borderColor: "rgba(54, 162, 235, 1)",
-            borderWidth: 1
-          }]
-        },
-        options: {
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: { display: true, text: "Hours of Sleep" }
-            },
-            x: {
-              title: { display: true, text: "Date" }
-            }
-          }
+    <meta charset="UTF-8">
+    <title>Sleep Tracker Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
         }
-      });
-    }
 
-    // Run when page loads
-    main();
-  </script>
+        h1 {
+            margin-top: 0;
+        }
+
+        .patient-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+        }
+
+        .patient-box strong {
+            display: block;
+        }
+
+        .top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f3f3f3;
+        }
+
+        .controls label {
+            margin-right: 5px;
+        }
+
+        .controls input {
+            width: 60px;
+        }
+
+        .controls button {
+            margin-left: 5px;
+        }
+
+        .status-text {
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        .layout {
+            display: flex;
+            gap: 20px;
+        }
+
+        .main-panel {
+            flex: 3;
+        }
+
+        .side-panel {
+            flex: 1.2;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #fafafa;
+        }
+
+        ul {
+            margin-top: 5px;
+        }
+
+        a {
+            color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sleep Tracker Dashboard</h1>
+
+    <!-- Patient info box -->
+    <div class="patient-box">
+        <strong>Patient:</strong> Synthetic cancer patient  
+        <strong>Patient ID:</strong> patient-001  
+        <small>This is test data for the CS 6440 practicum project. All sleep values are simulated.</small>
+    </div>
+
+    <div class="top-bar">
+        <!-- Controls for number of nights -->
+        <div class="controls">
+            <label for="nights">Number of nights:</label>
+            <input type="number" id="nights" value="5" min="1" max="30">
+            <button id="loadBtn">Load data</button>
+            <button id="resetBtn">Reset to 5 nights</button>
+            <div id="status" class="status-text">Loading…</div>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="main-panel">
+            <h2>Sleep hours over time</h2>
+            <canvas id="sleepChart" width="600" height="250"></canvas>
+
+            <p>
+                The chart shows total hours of sleep for each night. The “sleep quality”
+                (great / good / bad) is still picked randomly inside the generator.
+            </p>
+
+            <h3>Night-by-night summary</h3>
+            <ul id="summaryList"></ul>
+        </div>
+
+        <div class="side-panel">
+            <h3>Other API URLs in this app</h3>
+            <ul>
+                <li><a href="/">/</a> – Simple home message.</li>
+                <li><a href="/sleep">/sleep</a> – One night of sleep as JSON.</li>
+                <li><a href="/sleep/series">/sleep/series</a> – Multiple nights of sleep as JSON.</li>
+                <li><a href="/fhir/observation">/fhir/observation</a> – FHIR Bundle (Patient, Condition, Observation) as JSON.</li>
+                <li><a href="/fhir/view">/fhir/view</a> – Simple page that explains the FHIR bundle.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let chartInstance = null;
+
+        // Draw or update the chart
+        function drawChart(labels, values) {
+            const ctx = document.getElementById("sleepChart").getContext("2d");
+
+            // If a chart already exists, remove it first
+            if (chartInstance !== null) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Total sleep (hours)",
+                        data: values,
+                        fill: false,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Hours"
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 9
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: "Date"
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load data from /sleep/series
+        async function loadData() {
+            const nightsInput = document.getElementById("nights");
+            const statusDiv = document.getElementById("status");
+            const summaryList = document.getElementById("summaryList");
+
+            let nights = parseInt(nightsInput.value, 10);
+            if (isNaN(nights) || nights < 1) {
+                nights = 1;
+            }
+            if (nights > 30) {
+                nights = 30;
+            }
+            nightsInput.value = nights;
+
+            statusDiv.textContent = "Loading…";
+
+            try {
+                const response = await fetch(`/sleep/series?nights=${nights}`);
+                const series = await response.json();
+
+                const labels = series.map(item => item.date);
+                const values = series.map(item => item.total_sleep_hours);
+
+                drawChart(labels, values);
+
+                // Fill the summary list
+                summaryList.innerHTML = "";
+                series.forEach(item => {
+                    const li = document.createElement("li");
+                    li.textContent = `${item.date} – ${item.total_sleep_hours} hours (quality: ${item.sleep_quality})`;
+                    summaryList.appendChild(li);
+                });
+
+                statusDiv.textContent = `Loaded ${series.length} night(s) of sleep.`;
+            } catch (err) {
+                console.error(err);
+                statusDiv.textContent = "Error loading data.";
+            }
+        }
+
+        // Reset button: set value back to 5 and reload
+        function resetToFive() {
+            const nightsInput = document.getElementById("nights");
+            nightsInput.value = 5;
+            loadData();
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("loadBtn").addEventListener("click", loadData);
+            document.getElementById("resetBtn").addEventListener("click", resetToFive);
+
+            // Load once on page open
+            loadData();
+        });
+    </script>
 </body>
 </html>
