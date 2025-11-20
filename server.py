@@ -18,16 +18,40 @@ app = Flask(__name__)
 @app.route("/")
 def home():
     return """
-    <h2>Sleep Tracker Project</h2>
-    <p>Here are the pages you can try:</p>
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Sleep Tracker Project</title>
+      </head>
+      <body>
+        <h1>Sleep Tracker Project</h1>
 
-    <p>/sleep - this makes one night of sleep data</p>
+        <p>Here are the pages you can try:</p>
+        <ul>
+          <li>
+            <a href="/sleep">/sleep</a> – one night of sleep as JSON.
+          </li>
+          <li>
+            <a href="/sleep/series?nights=5">/sleep/series?nights=5</a>
+            – several nights of sleep as JSON (here the <code>nights</code> value is 5).
+          </li>
+          <li>
+            <a href="/dashboard">/dashboard</a> – main dashboard with the sleep chart.
+          </li>
+          <li>
+            <a href="/fhir/observation">/fhir/observation</a>
+            – FHIR Bundle (Patient, Condition, Observation) as raw JSON.
+          </li>
+          <li>
+            <a href="/fhir/view">/fhir/view</a>
+            – page that explains the FHIR bundle and shows it nicely formatted.
+          </li>
+        </ul>
 
-    <p>/sleep/series?nights=5 - this makes several nights of sleep data</p>
-
-    <p>/dashboard - this shows a simple chart</p>
-
-    <p>/fhir/observation - this shows the sleep data as a FHIR Bundle</p>
+        <p>All data on this site is synthetic test data for the CS 6440 practicum project.</p>
+      </body>
+    </html>
     """
 
 # Main route that gives back sleep data
