@@ -24,16 +24,19 @@ Note: Render may take up a minute or two to wake after inactivity
 Repository Structure
 app/
     sleep_gen.py        # Sleep generator module
-templates
+templates/
     dashboard.html      # Dashboard with Chart.js
     fhir_view.html      # Human-readable FHIR page
-static
+static/
 server.py               # Flask application
 fhir_utils.py           # Patient/Condition/Observation builder
 test_sleep_gen.py       # Basic tests for single-night generator
 test_sleep_series.py    # Basic tests for multi-night generator
 requirements.txt        # Python dependencies
 Procfile                # Render deployment command
+docs/
+    Architecture_Diagram.jpeg   # Architecture diagram from Sprint #2
+    Mockup.jpeg             # Mockup diagram from Sprint #2
 README.md 
 
 Installation (Local Run Instructions)
